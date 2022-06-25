@@ -1,8 +1,54 @@
 import { DefaultUi, Player, Youtube } from "@vime/react";
 import { CaretRight, DiscordLogo, FileArrowDown, Lightning, Image } from "phosphor-react";
+import { gql, useQuery } from "@apollo/client";
 import '@vime/core/themes/default.css'
+import { Loading } from "./Loading";
+import { Lesson } from "./Lesson";
 
-export function Video() {
+const GET_LESSON_BY_SLUG_QUERY = gql `
+query GetLessonBySlug ($slug: String) {
+  lesson(where: {slug: $slug}) {
+    title
+    videoId
+    description
+    teacher {
+      bio
+      avatarURL
+      name
+    }
+  }
+}`
+
+interface VideoProps {
+  lessonSlug: string;
+}
+
+interface GetLessonsBySlugResponse {
+  lesson: {
+    title: string;
+    videoId: string;
+    description: string;
+    teacher: {
+      bio: string;
+      avatarURL: string;
+      name: string;
+    }
+
+  }
+}
+
+export function Video(props: VideoProps) {
+  const { data } = useQuery<GetLessonsBySlugResponse>(GET_LESSON_BY_SLUG_QUERY, {
+    variables: {
+      slug: props.lessonSlug
+    }})
+    if (!data) {
+      return (
+        <div className="flex flex-1 justify-center items-center">
+          <Loading /> 
+        </div>
+      )
+    }
   return (
     <div className="flex-1">
       <div className="bg-black flex justify-center">
@@ -17,27 +63,27 @@ export function Video() {
         <div className="flex items-start gap-16">
           <div className="flex-1">
             <h1 className="text-2xl font-bold">
-                Aula 01 - Abertura do Ignite Lab
+                {data.lesson.title}
             </h1>
             <p className="mt-4 text-gray-200 leading-relaxed">
-            Nessa aula vamos dar início ao projeto criando a estrutura base da aplicação utilizando ReactJS, Vite e TailwindCSS. Vamos também realizar o setup do nosso projeto no GraphCMS criando as entidades da aplicação e integrando a API GraphQL gerada pela plataforma no nosso front-end utilizando Apollo Client.
+           {data.lesson.description}
             </p>
             <div className="flex items-center gap-5 mt-6">
               <img 
               className="rounded-full h-20 w-20 
               border-2 border-blue-500 hover:border-green-500 hover:border
               transition-colors duration-1000"
-              src="https://avatars.githubusercontent.com/u/100000031?v=4" 
-              alt="imagem joao" />
+              src={data.lesson.teacher.avatarURL}
+              alt={`Foto do instrutor ${data.lesson.teacher.name}`} />
               <div className="leading-relaxed">
                 <strong className="font-bold text-2xl block hover:text-green-500
               transition-colors duration-500">
-                João Lima
+                {data.lesson.teacher.name}
                 </strong>
                 <span className="text-gray-200
                 text-sm block
                hover:text-blue-500">
-                Web Development Student
+                {data.lesson.teacher.bio}
                 </span>
               </div>
             </div>
